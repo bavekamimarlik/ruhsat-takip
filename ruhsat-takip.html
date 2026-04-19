@@ -242,7 +242,8 @@ label{display:block;font-size:11px;font-weight:600;color:var(--text2);margin-bot
     <button id="cikis-btn" onclick="oturumKapat()" class="btn btn-xs" style="width:100%;margin-bottom:8px;font-size:11px;display:none">↩ Çıkış</button>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px" id="gdrive-durum">
       <div style="width:8px;height:8px;border-radius:50%;background:var(--text3);flex-shrink:0" id="gdrive-led"></div>
-      <span style="font-size:11px;color:var(--text3)" id="gdrive-durum-text">Drive bağlı değil</span>
+      <span style="font-size:11px;color:var(--text3);flex:1" id="gdrive-durum-text">Drive bağlı değil</span>
+      <button class="btn btn-xs" onclick="driveOtomatikYedek(false)" id="gdrive-yedek-btn" style="display:none;font-size:9px;margin-right:4px" title="Manuel yedek al">☁️</button>
       <button class="btn btn-xs" onclick="gdriveBaglan()" style="margin-left:auto;font-size:10px" id="gdrive-btn">🔗 Bağlan</button>
     </div>
     <div style="display:flex;align-items:center;gap:8px">
@@ -1597,7 +1598,6 @@ function girisSifreGoster(){
 
 const IS_FILE = false;
 const GDRIVE_CLIENT_ID = '943458333823-4gnmbedtc441bcfgjnqr26s9ht20phpu.apps.googleusercontent.com';
-const GDRIVE_SCOPES = 'https://www.googleapis.com/auth/drive.file';
 let gdriveToken = null;
 let gdriveRootFolderId = null; // "Ruhsat Takip" ana klasörü
 
@@ -1619,7 +1619,106 @@ function gdriveGirisYap(){
   });
 }
 
-// Klasör oluştur veya bul
+// ── OTOMATİK DRIVE YEDEKLEME ─────────────────────────────────
+
+// Scope'u drive.file yerine drive'a genişletelim (klasör okuma için)
+const GDRIVE_SCOPES = 'https://www.googleapis.com/auth/drive';
+
+let driveYedekZamanlayici = null;
+
+// Tam veri yedeği — tüm S objesi JSON olarak Drive'a
+async function driveOtomatikYedek(sessiz = true){
+  if(!gdriveToken) return; // Drive bağlı değilse atla
+  try{
+    if(!gdriveRootFolderId){
+      gdriveRootFolderId = await gdriveFolderBulVeyaOlustur('Ruhsat Takip', null);
+    }
+    // Yedekler klasörü
+    const yedekKlasorId = await gdriveFolderBulVeyaOlustur('_Yedekler', gdriveRootFolderId);
+
+    // Yedek içeriği
+    const yedekData = {
+      tarih: new Date().toISOString(),
+      versiyon: '1.0',
+      dosyalar: S.dosyalar,
+      personel: S.personel,
+      mutahitler: S.mutahitler,
+      gorevler: S.gorevler,
+      projeBilgileri: {},
+    };
+    // proje-bilgi localStorage verilerini ekle
+    S.dosyalar.forEach(function(d){
+      const pb = localStorage.getItem('proje-bilgi-'+d.id);
+      if(pb) yedekData.projeBilgileri[d.id] = JSON.parse(pb);
+    });
+
+    const tarihStr = new Date().toISOString().slice(0,10); // YYYY-MM-DD
+    const saatStr  = new Date().toTimeString().slice(0,5).replace(':','-'); // HH-MM
+    const dosyaAdi = 'yedek-'+tarihStr+'-'+saatStr+'.json';
+
+    // Aynı gün yedeği varsa üzerine yaz
+    const mevcutlar = await gdriveDosyalariListele(yedekKlasorId);
+    const ayniGun = (mevcutlar.files||[]).find(f=>f.name.startsWith('yedek-'+tarihStr));
+    if(ayniGun){
+      // Güncelle (PATCH)
+      await fetch('https://www.googleapis.com/upload/drive/v3/files/'+ayniGun.id+'?uploadType=multipart', {
+        method: 'PATCH',
+        headers: {Authorization:'Bearer '+gdriveToken},
+        body: (() => {
+          const form = new FormData();
+          form.append('metadata', new Blob([JSON.stringify({name:dosyaAdi})],{type:'application/json'}));
+          form.append('file', new Blob([JSON.stringify(yedekData, null, 2)],{type:'application/json'}));
+          return form;
+        })()
+      });
+    } else {
+      // Yeni yedek oluştur
+      const form = new FormData();
+      form.append('metadata', new Blob([JSON.stringify({name:dosyaAdi, parents:[yedekKlasorId]})],{type:'application/json'}));
+      form.append('file', new Blob([JSON.stringify(yedekData, null, 2)],{type:'application/json'}));
+      await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+        method:'POST', headers:{Authorization:'Bearer '+gdriveToken}, body:form
+      });
+    }
+
+    // Eski yedekleri temizle (30'dan fazlaysa en eskisini sil)
+    const tumYedekler = (mevcutlar.files||[]).filter(f=>f.name.startsWith('yedek-')).sort((a,b)=>a.name.localeCompare(b.name));
+    if(tumYedekler.length > 30){
+      const silinecek = tumYedekler[0];
+      await fetch('https://www.googleapis.com/drive/v3/files/'+silinecek.id, {
+        method:'DELETE', headers:{Authorization:'Bearer '+gdriveToken}
+      });
+    }
+
+    if(!sessiz) toast('☁️ Drive yedeği alındı','green');
+    localStorage.setItem('son-yedek-tarih', new Date().toISOString());
+    sonYedekGoster();
+  } catch(e){
+    console.warn('Drive yedek hatası:', e);
+    if(!sessiz) toast('Drive yedek hatası: '+e.message,'red');
+  }
+}
+
+// Otomatik yedekleme zamanlayıcısını başlat (her 30dk)
+function driveYedekBaslat(){
+  driveYedekZamanlayici = setInterval(function(){
+    driveOtomatikYedek(true);
+  }, 30 * 60 * 1000); // 30 dakika
+  // İlk bağlantıda 5 saniye sonra bir yedek al
+  setTimeout(function(){ driveOtomatikYedek(true); }, 5000);
+}
+
+function sonYedekGoster(){
+  const tarih = localStorage.getItem('son-yedek-tarih');
+  const el = document.getElementById('gdrive-durum-text');
+  if(el && tarih){
+    const dt = new Date(tarih);
+    const str = dt.toLocaleString('tr-TR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+    el.textContent = '☁️ Drive bağlı · Son yedek: '+str;
+  }
+}
+
+// Drive klasör oluştur veya bul
 async function gdriveFolderBulVeyaOlustur(name, parentId){
   const q = parentId
     ? `name='${name}' and mimeType='application/vnd.google-apps.folder' and '${parentId}' in parents and trashed=false`
@@ -1758,34 +1857,55 @@ async function dbGet(table, params=''){
   }catch(e){return{data:null,error:{message:e.message}};}
 }
 
+// Debounced yedek — art arda işlemlerde sadece bir kez çalışır
+let _yedekDebounce = null;
+function driveYedekTetikle(){
+  if(!gdriveToken) return;
+  clearTimeout(_yedekDebounce);
+  _yedekDebounce = setTimeout(function(){ driveOtomatikYedek(true); }, 10000);
+}
+
 async function dbInsert(table, data){
   if(!SB_AKTIF){
     const body = Array.isArray(data)?data:[data];
-    return lsInsert(table, body);
+    const r = lsInsert(table, body);
+    driveYedekTetikle();
+    return r;
   }
   try{
     const body=Array.isArray(data)?data:[data];
     const r=await fetch(`${SB_URL}/rest/v1/${table}`,{method:'POST',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify(body)});
     const json=await r.json();
     if(!r.ok) return{data:null,error:{message:json.message||json.error||`HTTP ${r.status}`}};
+    driveYedekTetikle();
     return{data:json,error:null};
   }catch(e){return{data:null,error:{message:e.message}};}
 }
 
 async function dbUpdate(table, data, col, val){
-  if(!SB_AKTIF) return lsUpdate(table, data, col, val);
+  if(!SB_AKTIF){
+    const r = lsUpdate(table, data, col, val);
+    driveYedekTetikle();
+    return r;
+  }
   try{
     const r=await fetch(`${SB_URL}/rest/v1/${table}?${col}=eq.${encodeURIComponent(val)}`,{method:'PATCH',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify(data)});
     if(!r.ok){const j=await r.json().catch(()=>({}));return{error:{message:j.message||`HTTP ${r.status}`}};}
+    driveYedekTetikle();
     return{error:null};
   }catch(e){return{error:{message:e.message}};}
 }
 
 async function dbDelete(table, col, val){
-  if(!SB_AKTIF) return lsDelete(table, col, val);
+  if(!SB_AKTIF){
+    const r = lsDelete(table, col, val);
+    driveYedekTetikle();
+    return r;
+  }
   try{
     const r=await fetch(`${SB_URL}/rest/v1/${table}?${col}=eq.${encodeURIComponent(val)}`,{method:'DELETE',headers:{...H,'Prefer':'return=minimal'}});
     if(!r.ok){const j=await r.json().catch(()=>({}));return{error:{message:j.message||`HTTP ${r.status}`}};}
+    driveYedekTetikle();
     return{error:null};
   }catch(e){return{error:{message:e.message}};}
 }
@@ -2083,12 +2203,12 @@ async function gdriveBaglan(){
     // Ana klasörü hazırla
     gdriveRootFolderId = await gdriveFolderBulVeyaOlustur('Ruhsat Takip', null);
     if(led) led.style.background = 'var(--green)';
-    if(txt) txt.textContent = 'Drive bağlı ✓';
     if(btn){ btn.textContent = '✓ Bağlı'; btn.style.background='rgba(34,197,94,.15)'; btn.style.borderColor='rgba(34,197,94,.4)'; btn.style.color='var(--green)'; }
-    // Drive'da klasör linkini göster
-    const driveLink = 'https://drive.google.com/drive/folders/'+gdriveRootFolderId;
-    toast('Google Drive bağlandı — klasör oluşturuldu ✓','green');
+    const yedekBtn = document.getElementById('gdrive-yedek-btn');
+    if(yedekBtn) yedekBtn.style.display = 'inline-block';
     toast('Google Drive bağlandı ✓','green');
+    driveYedekBaslat();
+    sonYedekGoster();
   } catch(e){
     if(led) led.style.background = 'var(--red)';
     if(txt) txt.textContent = 'Bağlantı başarısız';
