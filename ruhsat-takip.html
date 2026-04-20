@@ -879,6 +879,27 @@ label{display:block;font-size:11px;font-weight:600;color:var(--text2);margin-bot
   </div>
 
   <!-- SİL ONAY -->
+  <!-- MOBİL EVRAK SEÇİCİ -->
+  <div id="modal-mobil-evrak-sec" class="modal" style="display:none;width:320px;text-align:center">
+    <div class="modal-title">Evrak Ekle</div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+      <button onclick="_mobilvrakKameraSec()" style="padding:14px;border-radius:var(--rl);border:1px solid var(--border2);background:var(--bg3);color:var(--text);cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:12px;transition:all .15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)'">
+        <span style="font-size:28px">📷</span>
+        <div style="text-align:left">
+          <div style="font-weight:600;font-size:13px">Kameradan Çek</div>
+          <div style="font-size:11px;color:var(--text3)">Fotoğraf çekip yükle</div>
+        </div>
+      </button>
+      <button onclick="_mobilvrakDosyaSec()" style="padding:14px;border-radius:var(--rl);border:1px solid var(--border2);background:var(--bg3);color:var(--text);cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:12px;transition:all .15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)'">
+        <span style="font-size:28px">📁</span>
+        <div style="text-align:left">
+          <div style="font-weight:600;font-size:13px">Dosyadan Seç</div>
+          <div style="font-size:11px;color:var(--text3)">PDF, Word, görsel</div>
+        </div>
+      </button>
+    </div>
+    <button class="btn" onclick="hideModal()" style="width:100%">İptal</button>
+  </div>
   <div id="modal-sil-onay" class="confirm-modal" style="display:none">
     <div class="confirm-icon">⚠️</div>
     <div class="confirm-title">Dosyayı silmek istediğinize emin misiniz?</div>
@@ -3920,17 +3941,11 @@ async function dosyaDetay(dosyaId){
         <span style="font-size:10px;color:var(--green);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0" title="${kayitli.name}">${kayitli.name}</span>
         <button class="btn btn-xs" onclick="detayEvrakGoruntule('${dosyaId}','${e.key}')" style="flex-shrink:0;font-size:10px">👁</button>
         <button class="btn btn-xs" onclick="detayEvrakIndir('${dosyaId}','${e.key}')" style="flex-shrink:0;font-size:10px">⬇</button>
-        <label style="flex-shrink:0;cursor:pointer;font-size:0;margin:0">
-          <input type="file" style="display:none" onchange="detayEvrakYukle('${dosyaId}','${e.key}','${e.baslik}',this)" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
-          <span class="btn btn-xs" style="pointer-events:none;font-size:10px">Değiştir</span>
-        </label>
+        <button class="btn btn-xs" onclick="mobilvrakSec('detay','${dosyaId}','${e.key}','${e.baslik}')" style="flex-shrink:0;font-size:10px">Değiştir</button>
         <button class="btn btn-xs btn-danger" onclick="detayEvrakSilSor('${dosyaId}','${e.key}','${e.baslik}')" style="flex-shrink:0;font-size:10px">Sil</button>
       ` : `
         <span style="font-size:10px;color:var(--text3);flex-shrink:0">Yüklenmedi</span>
-        <label style="flex-shrink:0;cursor:pointer;font-size:0;margin:0">
-          <input type="file" style="display:none" onchange="detayEvrakYukle('${dosyaId}','${e.key}','${e.baslik}',this)" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
-          <span class="btn btn-xs btn-primary" style="pointer-events:none;font-size:10px">Yükle</span>
-        </label>
+        <button class="btn btn-xs btn-primary" onclick="mobilvrakSec('detay','${dosyaId}','${e.key}','${e.baslik}')" style="flex-shrink:0;font-size:10px">📎 Yükle</button>
       `}
     </div>`;
   });
@@ -4723,10 +4738,7 @@ function evrakYukle(dosyaId, evrakId, input){
           <div style="font-size:11px;font-weight:500;color:${mevcut?'var(--text)':'var(--text2)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.label}</div>
           ${mevcut?`<div style="font-size:10px;color:var(--green);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${mevcut.name}">${mevcut.name}</div>`:'<div style="font-size:10px;color:var(--text3)">Yüklenmedi</div>'}
         </div>
-        <label style="cursor:pointer;flex-shrink:0;text-transform:none;font-size:0;letter-spacing:0;margin:0">
-          <input type="file" style="display:none" onchange="evrakYukle('${dosyaId}','${e.id}',this)" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
-          <span class="btn btn-xs" style="pointer-events:none;font-size:10px">${mevcut?'Değiştir':'Yükle'}</span>
-        </label>
+        <button class="btn btn-xs" onclick="mobilvrakSec('evrak','${dosyaId}','${e.id}','')" style="flex-shrink:0;font-size:10px">${mevcut?'Değiştir':'📎 Yükle'}</button>
       </div>`;
     }).join('');
     panel.querySelector('div[style*="grid-template-columns"]').innerHTML = satirlar;
@@ -7203,17 +7215,11 @@ function buildEvrakSatiri(key, baslik, kayitli, altSatir){
       <span style="font-size:10px;color:var(--green);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0" title="${kayitli.name}">${kayitli.name}</span>
       <button class="btn btn-xs" onclick="globalEvrakGoruntule('${key}')" style="flex-shrink:0;font-size:10px">👁</button>
       <button class="btn btn-xs" onclick="globalEvrakIndir('${key}')" style="flex-shrink:0;font-size:10px">⬇</button>
-      <label style="flex-shrink:0;cursor:pointer;font-size:0;margin:0">
-        <input type="file" style="display:none" onchange="globalEvrakYukle('${key}','${baslik}',this)" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
-        <span class="btn btn-xs" style="pointer-events:none;font-size:10px">Değiştir</span>
-      </label>
+      <button class="btn btn-xs" onclick="mobilvrakSec('global','','${key}','${baslik}')" style="flex-shrink:0;font-size:10px">Değiştir</button>
       <button class="btn btn-xs btn-danger" onclick="globalEvrakSilSor('${key}','${baslik}')" style="flex-shrink:0;font-size:10px">Sil</button>
     ` : `
       <span style="font-size:10px;color:var(--text3);flex-shrink:0">Yüklenmedi</span>
-      <label style="flex-shrink:0;cursor:pointer;font-size:0;margin:0">
-        <input type="file" style="display:none" onchange="globalEvrakYukle('${key}','${baslik}',this)" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
-        <span class="btn btn-xs btn-primary" style="pointer-events:none;font-size:10px">Yükle</span>
-      </label>
+      <button class="btn btn-xs btn-primary" onclick="mobilvrakSec('global','','${key}','${baslik}')" style="flex-shrink:0;font-size:10px">📎 Yükle</button>
     `}
   </div>`;
 }
@@ -7788,8 +7794,255 @@ document.addEventListener('keydown',e=>{
     showView('ara', document.querySelector('[data-view="ara"]'));
   }
 });
+
+// ── MOBİL EVRAK SEÇİCİ ───────────────────────────────────────
+
+let _mobilvrakTip, _mobilvrakDosyaId, _mobilvrakKey, _mobilvrakBaslik;
+
+function mobilvrakSec(tip, dosyaId, key, baslik){
+  _mobilvrakTip = tip;
+  _mobilvrakDosyaId = dosyaId;
+  _mobilvrakKey = key;
+  _mobilvrakBaslik = baslik;
+
+  const isMobil = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+  if(isMobil){
+    // Mobilde seçici göster
+    showModal('mobil-evrak-sec');
+  } else {
+    // Masaüstünde direkt dosya seçici aç
+    _mobilvrakDosyaSec();
+  }
+}
+
+function _mobilvrakDosyaSec(){
+  hideModal();
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.pdf,.jpg,.jpeg,.png,.doc,.docx';
+  input.onchange = function(){
+    if(!input.files[0]) return;
+    _mobilvrakIsle(input.files[0]);
+  };
+  input.click();
+}
+
+function _mobilvrakKameraSec(){
+  hideModal();
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.setAttribute('capture', 'environment');
+  input.onchange = function(){
+    if(!input.files[0]) return;
+    _mobilvrakIsle(input.files[0]);
+  };
+  input.click();
+}
+
+function _mobilvrakIsle(file){
+  if(_mobilvrakTip === 'detay'){
+    const fakeInput = {files:[file]};
+    detayEvrakYukle(_mobilvrakDosyaId, _mobilvrakKey, _mobilvrakBaslik, fakeInput);
+  } else if(_mobilvrakTip === 'evrak'){
+    const fakeInput = {files:[file]};
+    evrakYukle(_mobilvrakDosyaId, _mobilvrakKey, fakeInput);
+  } else if(_mobilvrakTip === 'global'){
+    const fakeInput = {files:[file]};
+    globalEvrakYukle(_mobilvrakKey, _mobilvrakBaslik, fakeInput);
+  } else if(_mobilvrakTip === 'parsel'){
+    const fakeInput = {files:[file]};
+    parselEvrakYukle(fakeInput);
+  }
+}
+
+// ── AI ASİSTAN ────────────────────────────────────────────────
+
+let aiPanelAcik = false;
+let aiMesajGecmisi = [];
+
+function aiAsistanToggle(){
+  aiPanelAcik = !aiPanelAcik;
+  const panel = document.getElementById('ai-asistan-panel');
+  if(panel) panel.style.display = aiPanelAcik ? 'flex' : 'none';
+  if(aiPanelAcik) setTimeout(function(){ document.getElementById('ai-input')?.focus(); }, 100);
+}
+
+function aiHizliSoru(soru){
+  const inp = document.getElementById('ai-input');
+  if(inp){ inp.value = soru; aiSoruGonder(); }
+}
+
+function aiVeriOzeti(){
+  const dosyalar = S.dosyalar.map(function(d){
+    const pData = JSON.parse(localStorage.getItem('proje-bilgi-'+d.id)||'{}');
+    return {
+      no: d.dosya_no, parsel: d.ad,
+      tevhitParsel: d.tevhit_parsel || pData.tevhitYeniParsel || null,
+      ilce: (d.adres||'').split('/')[0].trim(),
+      mutahit: (d.malik_ad||'').split('/')[0].trim(),
+      asama: d.aktif_asama_kod||'A.1', durum: d.durum||'devam',
+      gorevliMimar: S.personel.find(p=>p.id===d.gorevli_mimar_id)?.ad || null,
+      terk: pData.terkTevhit==='terk'||pData.terkTevhit==='her-ikisi',
+      tevhit: pData.terkTevhit==='tevhit'||pData.terkTevhit==='her-ikisi',
+      imarTipi: pData.imarTipi||null, kurul: pData.kurulTipi||null,
+      notlar: d.notlar||null
+    };
+  });
+  return {
+    dosyalar,
+    personel: S.personel.map(p=>({ad:p.ad+(p.soyad?' '+p.soyad:''), rol:p.rol})),
+    mutahitler: S.mutahitler.map(m=>({firma:m.firma_adi, kod:m.kod}))
+  };
+}
+
+async function aiSoruGonder(){
+  const inp = document.getElementById('ai-input');
+  const soru = inp?.value?.trim();
+  if(!soru) return;
+  aiMesajEkle('user', soru);
+  if(inp) inp.value = '';
+  const btn = document.getElementById('ai-gonder-btn');
+  if(btn) btn.style.opacity = '.4';
+  const loadId = 'ai-load-'+Date.now();
+  aiMesajEkle('loading', '', loadId);
+  try{
+    const veri = aiVeriOzeti();
+    const sistem = `Sen Baveka Mimarlık ruhsat takip programının asistanısın. Kullanıcının sorularını aşağıdaki güncel program verilerine göre yanıtla. Kısa, net, Türkçe cevap ver.
+
+DOSYALAR (${veri.dosyalar.length} adet):
+${JSON.stringify(veri.dosyalar)}
+
+PERSONEL: ${veri.personel.map(p=>p.ad+' ('+p.rol+')').join(', ')}
+MÜTEAHHİTLER: ${veri.mutahitler.map(m=>m.kod+'-'+m.firma).join(', ')}`;
+
+    const gecmis = aiMesajGecmisi.slice(-8).map(m=>({role:m.rol==='user'?'user':'assistant', content:m.icerik}));
+    gecmis.push({role:'user', content:soru});
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514', max_tokens:800, system:sistem, messages:gecmis})
+    });
+    const data = await resp.json();
+    const cevap = (data.content||[]).map(c=>c.text||'').join('');
+    document.getElementById(loadId)?.remove();
+    aiMesajEkle('assistant', cevap||'Yanıt alınamadı.');
+    aiMesajGecmisi.push({rol:'user',icerik:soru},{rol:'assistant',icerik:cevap});
+    if(aiMesajGecmisi.length>20) aiMesajGecmisi=aiMesajGecmisi.slice(-20);
+  } catch(e){
+    document.getElementById(loadId)?.remove();
+    aiMesajEkle('error','Hata: '+e.message);
+  }
+  if(btn) btn.style.opacity='1';
+}
+
+function aiMesajEkle(tip, icerik, id){
+  const container = document.getElementById('ai-mesajlar');
+  if(!container) return;
+  const div = document.createElement('div');
+  if(id) div.id = id;
+  if(tip==='user'){
+    div.style.cssText='display:flex;justify-content:flex-end;margin-bottom:6px';
+    div.innerHTML='<div style="max-width:85%;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;padding:8px 12px;border-radius:12px 12px 2px 12px;font-size:12px;line-height:1.5">'+icerik.replace(/</g,'&lt;')+'</div>';
+  } else if(tip==='assistant'){
+    const f=icerik.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+    div.style.cssText='display:flex;justify-content:flex-start;margin-bottom:6px';
+    div.innerHTML='<div style="max-width:92%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:12px 12px 12px 2px;font-size:12px;line-height:1.6">'+f+'</div>';
+  } else if(tip==='loading'){
+    div.style.cssText='display:flex;justify-content:flex-start;margin-bottom:6px';
+    div.innerHTML='<div style="background:var(--bg3);border:1px solid var(--border);padding:10px 16px;border-radius:12px;display:flex;gap:4px;align-items:center"><span style="width:6px;height:6px;border-radius:50%;background:#6366f1;animation:aiDot 1s infinite"></span><span style="width:6px;height:6px;border-radius:50%;background:#6366f1;animation:aiDot 1s .2s infinite"></span><span style="width:6px;height:6px;border-radius:50%;background:#6366f1;animation:aiDot 1s .4s infinite"></span></div>';
+  } else {
+    div.style.cssText='text-align:center;font-size:11px;color:var(--red);padding:4px';
+    div.textContent=icerik;
+  }
+  // Karşılama mesajlarını ilk gerçek mesajda temizle
+  if(tip==='user' && container.children.length <= 2){
+    while(container.firstChild) container.removeChild(container.firstChild);
+  }
+  container.appendChild(div);
+  container.scrollTop=container.scrollHeight;
+}
+
+const _aiStyle = document.createElement('style');
+_aiStyle.textContent='@keyframes aiDot{0%,80%,100%{transform:scale(0);opacity:.3}40%{transform:scale(1);opacity:1}}';
+document.head.appendChild(_aiStyle);
+
 </script>
 </div><!-- /app-screen -->
 </div><!-- /ana-uygulama -->
+<!-- ── AI ASİSTAN ──────────────────────────────────────────── -->
+<div id="ai-asistan-btn" onclick="aiAsistanToggle()"
+  style="position:fixed;bottom:24px;right:24px;z-index:1000;width:52px;height:52px;border-radius:50%;
+    background:linear-gradient(135deg,#6366f1,#8b5cf6);box-shadow:0 4px 20px rgba(99,102,241,.4);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;
+    border:2px solid rgba(255,255,255,.15)"
+  onmouseover="this.style.transform='scale(1.1)';this.style.boxShadow='0 6px 28px rgba(99,102,241,.6)'"
+  onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 4px 20px rgba(99,102,241,.4)'"
+  title="AI Asistan — Verilerinizi sorgulayın">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" fill="white" opacity="0"/>
+    <circle cx="12" cy="12" r="10" stroke="white" stroke-width="1.5" opacity="0.3"/>
+    <path d="M8 9.5C8 8.12 9.12 7 10.5 7h3C14.88 7 16 8.12 16 9.5c0 .97-.57 1.8-1.4 2.22L14 12v1h-4v-1l-.6-.28C8.57 11.3 8 10.47 8 9.5z" fill="white"/>
+    <rect x="10" y="14" width="4" height="1.5" rx=".75" fill="white"/>
+    <rect x="11" y="16.5" width="2" height="1" rx=".5" fill="white"/>
+  </svg>
+  <span id="ai-btn-badge" style="display:none;position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:50%;background:#22c55e;border:2px solid var(--bg)"></span>
+</div>
+
+<div id="ai-asistan-panel" style="display:none;position:fixed;bottom:88px;right:24px;z-index:999;
+  width:380px;max-width:calc(100vw - 32px);height:520px;max-height:calc(100vh - 120px);
+  background:var(--bg2);border:1px solid var(--border2);border-radius:16px;
+  box-shadow:0 20px 60px rgba(0,0,0,.5);display:none;flex-direction:column;overflow:hidden">
+
+  <!-- Başlık -->
+  <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0">
+    <div style="width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <span style="font-size:14px">✨</span>
+    </div>
+    <div style="flex:1">
+      <div style="font-size:13px;font-weight:600;color:var(--text)">Baveka Asistan</div>
+      <div style="font-size:10px;color:var(--text3)">Verilerinizi sorgulayın</div>
+    </div>
+    <button onclick="aiAsistanToggle()" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:18px;padding:0;line-height:1" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text3)'">✕</button>
+  </div>
+
+  <!-- Mesajlar -->
+  <div id="ai-mesajlar" class="scrollbar" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px">
+    <div style="text-align:center;padding:20px 10px">
+      <div style="font-size:28px;margin-bottom:8px">🏛️</div>
+      <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">Merhaba, nasıl yardımcı olabilirim?</div>
+      <div style="font-size:11px;color:var(--text3);line-height:1.6">Ruhsat dosyaları, personel, aşamalar ve görevler hakkında soru sorabilirsiniz.</div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:0 4px">
+      <button onclick="aiHizliSoru(this.textContent)" style="font-size:10px;padding:5px 10px;border-radius:20px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='#6366f1';this.style.color='#818cf8'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">1488-23'te terk var mı?</button>
+      <button onclick="aiHizliSoru(this.textContent)" style="font-size:10px;padding:5px 10px;border-radius:20px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='#6366f1';this.style.color='#818cf8'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">Ceyda'nın dosyaları hangileri?</button>
+      <button onclick="aiHizliSoru(this.textContent)" style="font-size:10px;padding:5px 10px;border-radius:20px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='#6366f1';this.style.color='#818cf8'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">K.1 aşamasındaki dosyalar?</button>
+      <button onclick="aiHizliSoru(this.textContent)" style="font-size:10px;padding:5px 10px;border-radius:20px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='#6366f1';this.style.color='#818cf8'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">LAGÜN'ün tüm dosyaları?</button>
+      <button onclick="aiHizliSoru(this.textContent)" style="font-size:10px;padding:5px 10px;border-radius:20px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='#6366f1';this.style.color='#818cf8'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">Anıtlar Kurulu olan dosyalar?</button>
+    </div>
+  </div>
+
+  <!-- Input -->
+  <div style="padding:10px 12px;border-top:1px solid var(--border);flex-shrink:0">
+    <div style="display:flex;gap:8px;align-items:flex-end">
+      <textarea id="ai-input" placeholder="Soru sorun... (ör: 1474-1'de tevhit var mı?)"
+        rows="2"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();aiSoruGonder()}"
+        style="flex:1;resize:none;font-size:12px;padding:8px 12px;border-radius:10px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-family:inherit;line-height:1.4;outline:none;transition:border-color .15s"
+        onfocus="this.style.borderColor='#6366f1'"
+        onblur="this.style.borderColor='var(--border2)'"></textarea>
+      <button onclick="aiSoruGonder()" id="ai-gonder-btn"
+        style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s"
+        onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+    <div style="font-size:9px;color:var(--text3);margin-top:5px;text-align:center">Enter ile gönder · Shift+Enter yeni satır</div>
+  </div>
+</div>
+
 </body>
 </html>
