@@ -188,7 +188,7 @@ label{display:block;font-size:11px;font-weight:600;color:var(--text2);margin-bot
           <circle cx="6" cy="6" r="4.5" stroke="white" stroke-width="1.5"/>
           <path d="M9.5 9.5L12.5 12.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
         </svg>
-        <span style="font-size:12px;color:rgba(255,255,255,.5);flex:1">Ara...</span>
+        <span style="font-size:12px;color:rgba(255,255,255,.5);flex:1">Baveka Asistan</span>
         <span style="font-size:10px;color:rgba(255,255,255,.25);background:rgba(255,255,255,.08);padding:1px 5px;border-radius:4px;font-family:monospace">⌘K</span>
       </div>
     </div>
@@ -373,28 +373,92 @@ label{display:block;font-size:11px;font-weight:600;color:var(--text2);margin-bot
 
     <!-- ARA -->
     <div id="view-ara" class="view">
-      <div style="max-width:700px;margin:0 auto">
-        <div class="card" style="margin-bottom:16px">
-          <div style="display:flex;align-items:center;gap:12px">
-            <span style="font-size:20px">🔍</span>
-            <input type="text" id="global-arama-input" placeholder="İlçe, müteahhit, ada/parsel veya dosya no yazın..."
-              oninput="globalAramaYap(this.value)"
-              style="flex:1;font-size:14px;padding:10px 14px;border-radius:var(--rl)"
-              autofocus>
-            <button class="btn" onclick="globalAramaTemizle()" style="flex-shrink:0">✕ Temizle</button>
+      <div style="max-width:720px;margin:0 auto">
+
+        <!-- Baveka Asistan başlık -->
+        <div style="text-align:center;padding:32px 16px 24px;position:relative">
+          <div style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,#6366f1,#8b5cf6);margin-bottom:14px;box-shadow:0 8px 24px rgba(99,102,241,.35)">
+            <span style="font-size:24px">✨</span>
           </div>
-          <div id="arama-etiketler" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
-            <span style="font-size:11px;color:var(--text3)">Hızlı ara:</span>
-            <button class="btn btn-xs" onclick="hizliAra('Fatih')">Fatih</button>
-            <button class="btn btn-xs" onclick="hizliAra('Üsküdar')">Üsküdar</button>
-            <button class="btn btn-xs" onclick="hizliAra('Beşiktaş')">Beşiktaş</button>
-            <button class="btn btn-xs" onclick="hizliAra('devam')">Devam Eden</button>
-            <button class="btn btn-xs" onclick="hizliAra('gecikme')">Gecikmeli</button>
+          <h1 style="font-size:22px;font-weight:700;color:var(--text);margin:0 0 6px;letter-spacing:-.3px">Baveka Asistan</h1>
+          <p style="font-size:13px;color:var(--text3);margin:0">Ruhsat dosyaları, personel ve aşamalar hakkında soru sorun veya arama yapın</p>
+        </div>
+
+        <!-- Ana giriş kutusu — hem arama hem AI -->
+        <div style="position:relative;margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:0;background:var(--bg2);border:2px solid var(--border2);border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.15);transition:border-color .2s"
+            id="asistan-kutu"
+            onfocusin="this.style.borderColor='#6366f1'"
+            onfocusout="this.style.borderColor='var(--border2)'">
+            <div style="padding:0 14px;color:var(--text3);font-size:18px;flex-shrink:0">🔍</div>
+            <input type="text" id="global-arama-input"
+              placeholder="Ara veya soru sor: '1488-23 terk var mı?', 'Fatih dosyaları'..."
+              oninput="araVeyaAI(this.value)"
+              onkeydown="if(event.key==='Enter')araVeyaAIGonder()"
+              style="flex:1;font-size:14px;padding:14px 0;background:transparent;border:none;outline:none;color:var(--text);font-family:inherit">
+            <div style="display:flex;align-items:center;gap:6px;padding:0 12px;flex-shrink:0">
+              <button onclick="araVeyaAITemizle()" id="asistan-temizle-btn" style="display:none;background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;padding:4px;line-height:1" title="Temizle">✕</button>
+              <button onclick="araVeyaAIGonder()" id="asistan-gonder-btn"
+                style="padding:7px 14px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;cursor:pointer;color:white;font-size:12px;font-weight:600;font-family:inherit;transition:all .15s;white-space:nowrap"
+                onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Gönder ✦</button>
+            </div>
           </div>
         </div>
+
+        <!-- Mod seçici -->
+        <div style="display:flex;gap:8px;justify-content:center;margin-bottom:20px">
+          <button id="asistan-mod-ara" onclick="asistanModSec('ara')"
+            style="padding:6px 16px;border-radius:20px;border:1px solid #6366f1;background:rgba(99,102,241,.15);color:#818cf8;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s">
+            🔍 Ruhsat Ara
+          </button>
+          <button id="asistan-mod-ai" onclick="asistanModSec('ai')"
+            style="padding:6px 16px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s">
+            ✨ AI ile Sor
+          </button>
+        </div>
+
+        <!-- Hızlı sorular / aramalar -->
+        <div id="asistan-hizli" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:20px">
+          <span style="font-size:11px;color:var(--text3);width:100%;text-align:center;margin-bottom:2px">Hızlı:</span>
+          <button onclick="asistanHizli('Fatih')" class="asistan-chip">📍 Fatih</button>
+          <button onclick="asistanHizli('Üsküdar')" class="asistan-chip">📍 Üsküdar</button>
+          <button onclick="asistanHizli('Beşiktaş')" class="asistan-chip">📍 Beşiktaş</button>
+          <button onclick="asistanHizli('devam')" class="asistan-chip">🔄 Devam Eden</button>
+          <button onclick="asistanHizli('gecikme')" class="asistan-chip">⚠ Gecikmeli</button>
+          <button onclick="asistanModSec('ai');asistanHizliAI('Hangi dosyalarda tevhit var?')" class="asistan-chip" style="border-color:rgba(99,102,241,.4);color:#818cf8">✨ Tevhit olanlar?</button>
+          <button onclick="asistanModSec('ai');asistanHizliAI('Ceyda hangi dosyaları takip ediyor?')" class="asistan-chip" style="border-color:rgba(99,102,241,.4);color:#818cf8">✨ Ceyda\'nın dosyaları</button>
+          <button onclick="asistanModSec('ai');asistanHizliAI('K.1 aşamasındaki dosyalar hangileri?')" class="asistan-chip" style="border-color:rgba(99,102,241,.4);color:#818cf8">✨ K.1 aşaması</button>
+        </div>
+
+        <!-- Sonuçlar -->
         <div id="arama-sonuclari"></div>
+
+        <!-- AI cevap alanı -->
+        <div id="asistan-ai-alan" style="display:none">
+          <div id="asistan-ai-mesajlar" style="display:flex;flex-direction:column;gap:10px"></div>
+        </div>
+
       </div>
     </div>
+
+    <style>
+    .asistan-chip {
+      padding: 5px 12px;
+      border-radius: 20px;
+      border: 1px solid var(--border2);
+      background: var(--bg3);
+      color: var(--text2);
+      font-size: 11px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all .15s;
+    }
+    .asistan-chip:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(59,130,246,.08);
+    }
+    </style>
 
     <!-- DASHBOARD -->
     <div id="view-dashboard" class="view active">
@@ -2497,6 +2561,130 @@ function waBildirimGonder(btn){
 // ── GLOBAL ARAMA ─────────────────────────────────────────────────────────
 
 let aramaTimeout = null;
+
+// ── BAVEKA ASİSTAN (Ara + AI birleşik) ───────────────────────
+
+let _asistanMod = 'ara'; // 'ara' | 'ai'
+let _asistanAiGecmis = [];
+
+function asistanModSec(mod){
+  _asistanMod = mod;
+  const btnAra = document.getElementById('asistan-mod-ara');
+  const btnAi  = document.getElementById('asistan-mod-ai');
+  const aiAlan = document.getElementById('asistan-ai-alan');
+  const araAlan = document.getElementById('arama-sonuclari');
+  if(btnAra) btnAra.style.cssText = mod==='ara'
+    ? 'padding:6px 16px;border-radius:20px;border:1px solid #6366f1;background:rgba(99,102,241,.15);color:#818cf8;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit'
+    : 'padding:6px 16px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit';
+  if(btnAi) btnAi.style.cssText = mod==='ai'
+    ? 'padding:6px 16px;border-radius:20px;border:1px solid #6366f1;background:rgba(99,102,241,.15);color:#818cf8;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit'
+    : 'padding:6px 16px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit';
+  if(aiAlan)  aiAlan.style.display  = mod==='ai'  ? 'block' : 'none';
+  if(araAlan) araAlan.style.display = mod==='ara' ? 'block' : 'none';
+  const placeholder = document.getElementById('global-arama-input');
+  if(placeholder) placeholder.placeholder = mod==='ai'
+    ? '✨ Sorun: "1488-23 terk var mı?", "Ceyda\'nın dosyaları"...'
+    : '🔍 Ada/parsel, dosya no, müteahhit, ilçe ile arayın...';
+}
+
+function araVeyaAI(val){
+  const btn = document.getElementById('asistan-temizle-btn');
+  if(btn) btn.style.display = val ? 'block' : 'none';
+  if(_asistanMod === 'ara') globalAramaYap(val);
+}
+
+function araVeyaAIGonder(){
+  const inp = document.getElementById('global-arama-input');
+  const val = inp?.value?.trim();
+  if(!val) return;
+  if(_asistanMod === 'ara'){
+    globalAramaYap(val);
+  } else {
+    _asistanAiSorGonder(val);
+    inp.value = '';
+    const btn = document.getElementById('asistan-temizle-btn');
+    if(btn) btn.style.display = 'none';
+  }
+}
+
+function araVeyaAITemizle(){
+  const inp = document.getElementById('global-arama-input');
+  if(inp) inp.value = '';
+  globalAramaTemizle();
+  const btn = document.getElementById('asistan-temizle-btn');
+  if(btn) btn.style.display = 'none';
+}
+
+function asistanHizli(kelime){
+  asistanModSec('ara');
+  const inp = document.getElementById('global-arama-input');
+  if(inp){ inp.value = kelime; }
+  globalAramaYap(kelime);
+  const btn = document.getElementById('asistan-temizle-btn');
+  if(btn) btn.style.display = 'block';
+}
+
+function asistanHizliAI(soru){
+  const inp = document.getElementById('global-arama-input');
+  if(inp){ inp.value = soru; }
+  _asistanAiSorGonder(soru);
+  if(inp) inp.value = '';
+}
+
+async function _asistanAiSorGonder(soru){
+  const alan = document.getElementById('asistan-ai-mesajlar');
+  if(!alan) return;
+  asistanModSec('ai');
+
+  // Kullanıcı mesajı
+  const userDiv = document.createElement('div');
+  userDiv.style.cssText = 'display:flex;justify-content:flex-end';
+  userDiv.innerHTML = '<div style="max-width:80%;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;padding:10px 14px;border-radius:14px 14px 2px 14px;font-size:13px;line-height:1.5">'+soru.replace(/</g,'&lt;')+'</div>';
+  alan.appendChild(userDiv);
+
+  // Loading
+  const loadDiv = document.createElement('div');
+  loadDiv.style.cssText = 'display:flex;justify-content:flex-start';
+  loadDiv.innerHTML = '<div style="background:var(--bg3);border:1px solid var(--border);padding:12px 16px;border-radius:14px 14px 14px 2px;display:flex;gap:5px;align-items:center"><span style="width:7px;height:7px;border-radius:50%;background:#6366f1;animation:aiDot 1s infinite;display:inline-block"></span><span style="width:7px;height:7px;border-radius:50%;background:#6366f1;animation:aiDot 1s .2s infinite;display:inline-block"></span><span style="width:7px;height:7px;border-radius:50%;background:#6366f1;animation:aiDot 1s .4s infinite;display:inline-block"></span></div>';
+  alan.appendChild(loadDiv);
+  alan.scrollTop = alan.scrollHeight;
+  alan.parentElement.scrollTop = alan.parentElement.scrollHeight;
+
+  try{
+    const veri = aiVeriOzeti();
+    const sistem = `Sen Baveka Mimarlık ruhsat takip programının asistanısın. Kullanıcının sorularını aşağıdaki güncel program verilerine göre yanıtla. Kısa, net, Türkçe cevap ver. Tablo veya liste kullanabilirsin.
+
+DOSYALAR (${veri.dosyalar.length} adet): ${JSON.stringify(veri.dosyalar)}
+PERSONEL: ${veri.personel.map(p=>p.ad+' ('+p.rol+')').join(', ')}
+MÜTEAHHİTLER: ${veri.mutahitler.map(m=>m.kod+'-'+m.firma).join(', ')}`;
+
+    const gecmis = _asistanAiGecmis.slice(-8).map(m=>({role:m.rol,content:m.icerik}));
+    gecmis.push({role:'user',content:soru});
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,system:sistem,messages:gecmis})
+    });
+    const data = await resp.json();
+    const cevap = (data.content||[]).map(c=>c.text||'').join('');
+
+    loadDiv.remove();
+    const cevapDiv = document.createElement('div');
+    cevapDiv.style.cssText = 'display:flex;justify-content:flex-start';
+    const f = cevap.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+    cevapDiv.innerHTML = '<div style="max-width:92%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:14px 14px 14px 2px;font-size:13px;line-height:1.6">'+f+'</div>';
+    alan.appendChild(cevapDiv);
+    _asistanAiGecmis.push({rol:'user',icerik:soru},{rol:'assistant',icerik:cevap});
+    if(_asistanAiGecmis.length>20) _asistanAiGecmis=_asistanAiGecmis.slice(-20);
+  } catch(e){
+    loadDiv.remove();
+    const errDiv = document.createElement('div');
+    errDiv.style.cssText = 'text-align:center;font-size:11px;color:var(--red);padding:8px';
+    errDiv.textContent = 'Hata: '+e.message;
+    alan.appendChild(errDiv);
+  }
+  alan.scrollTop = alan.scrollHeight;
+}
 
 function hizliAra(kelime){
   const inp = document.getElementById('global-arama-input');
